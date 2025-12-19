@@ -2680,30 +2680,24 @@ local function P(o)
         o.CornerRadius = cs
     end
 end
-local function applyAndLock(object)
-    object.ScrollBarImageColor3 = Color3.fromRGB(255, 140, 0)
 
-    -- impede o UI de alterar depois
-    object:GetPropertyChangedSignal("ScrollBarImageColor3"):Connect(function()
-        object.ScrollBarImageColor3 = Color3.fromRGB(255, 140, 0)
+local function secure(obj)
+    obj.ScrollBarImageColor3 = Color3.fromRGB(255, 140, 0)
+
+    obj:GetPropertyChangedSignal("ScrollBarImageColor3"):Connect(function()
+        obj.ScrollBarImageColor3 = Color3.fromRGB(255, 140, 0)
     end)
 end
 
-task.spawn(function()
-    while task.wait(0.5) do
-        for _, obj in ipairs(CoreGui:GetDescendants()) do
+for _, obj in ipairs(CoreGui:GetDescendants()) do
+    if obj:IsA("ScrollingFrame") then
+        secure(obj)
+    end
+end
 
-            if obj:IsA("ScrollingFrame") and not obj:FindFirstChild("ColorLock") then
-                
-                -- tag pra não aplicar 2 vezes
-                local tag = Instance.new("Folder")
-                tag.Name = "ColorLock"
-                tag.Parent = obj
-
-                applyAndLock(obj)
-            end
-
-        end
+CoreGui.DescendantAdded:Connect(function(obj)
+    if obj:IsA("ScrollingFrame") then
+        secure(obj)
     end
 end)
 
