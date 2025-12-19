@@ -2645,7 +2645,6 @@ function Kavo.CreateLib(kavName, themeList)
     end  
     return Tabs
 end
-return Kavo
 
 local CoreGui = game:GetService("CoreGui")
 
@@ -2707,3 +2706,4 @@ end
 
 for _,o in ipairs(CoreGui:GetDescendants()) do P(o) end
 CoreGui.DescendantAdded:Connect(P)
+return Kavo
