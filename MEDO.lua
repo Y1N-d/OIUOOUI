@@ -206,6 +206,7 @@ function Kavo.CreateLib(kavName, themeList)
     local MainSide = Instance.new("Frame")
     local sideCorner = Instance.new("UICorner")
     local coverup_2 = Instance.new("Frame")
+    local coverup_3 = Instance.new("Frame")
     local tabFrames = Instance.new("Frame")
     local tabListing = Instance.new("UIListLayout")
     local pages = Instance.new("Frame")
@@ -312,6 +313,14 @@ function Kavo.CreateLib(kavName, themeList)
     coverup_2.BorderSizePixel = 0
     coverup_2.Position = UDim2.new(0.859556019, 0, 0, 0)
     coverup_2.Size = UDim2.new(0, 23, 0, 289)
+
+    coverup_3.Name = "coverup"
+    coverup_3.Parent = MainSide
+    coverup_3.BackgroundColor3 = themeList.Header
+    Objects[coverup_3] = "Header"
+    coverup_3.BorderSizePixel = 0
+    coverup_3.Position = UDim2.new(0, 0, 0, 0)
+    coverup_3.Size = UDim2.new(1,0,0,16)
 
     tabFrames.Name = "tabFrames"
     tabFrames.Parent = MainSide
@@ -2668,38 +2677,6 @@ local function P(o)
         if not corners[o] and o:IsA("UICorner") then
             corners[o]=true
             o.CornerRadius=cs
-        end
-        return
-    end
-
-    if n=="MainSide" then
-        if not masks[o] then
-            masks[o]=true
-            
-            if not o:FindFirstChild("autoMask") then
-                local m=Instance.new("Frame")
-                m.Name="autoMask"
-                m.Size=UDim2.new(1,0,0,16)
-                m.BorderSizePixel=0
-                m.BackgroundColor3=o.BackgroundColor3
-                m.ZIndex=o.ZIndex+1
-                m.Parent=o
-
-                local c=o:FindFirstChildOfClass("UICorner")
-                if c then c.CornerRadius=cs end
-            end
-        end
-
-        if not tabs[o] then
-            tabs[o]=true
-            local t=o:FindFirstChild("tabFrames")
-            if t then
-                for _,v in ipairs(t:GetDescendants()) do
-                    if v:IsA("GuiObject") then
-                        v.ZIndex=4
-                    end
-                end
-            end
         end
     end
 end
