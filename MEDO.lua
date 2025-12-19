@@ -2661,24 +2661,23 @@ local CoreGui = game:GetService("CoreGui")
 local cs = UDim.new(0, 16)
 local sc = Color3.fromRGB(255, 140, 0)
 
-local masks,scrolls,corners,tabs={},{},{},{}
+local scrolls, corners = {}, {}
 
 local function P(o)
     if o:IsA("ScrollingFrame") then
         if not scrolls[o] then
-            scrolls[o]=true
-            o.ScrollBarImageColor3=sc
+            scrolls[o] = true
+            o.ScrollBarImageColor3 = sc
         end
         return
     end
 
-    local n=o.Name
+    local n = o.Name
 
-    if n=="sideCorner" or n=="headerCover" or n=="MainCorner" then
-        if not corners[o] and o:IsA("UICorner") then
-            corners[o]=true
-            o.CornerRadius=cs
-        end
+    if (n == "sideCorner" or n == "headerCover" or n == "MainCorner")
+    and o:IsA("UICorner") and not corners[o] then
+        corners[o] = true
+        o.CornerRadius = cs
     end
 end
 
