@@ -682,6 +682,10 @@ SecLighting:NewButton("Remover Blur", "Remove todos os efeitos de Blur do jogo",
     print("Sucesso: " .. count .. " itens de Blur foram deletados.")
 end)
 
+SecLighting:NewButton("Remover Every Effect", "Remove todos os efeitos de Blur do jogo", function()
+    game.Lighting:ClearAllChildren()
+end)
+
 --====== (([[{{ LOCAL PLAYER }}]])) ======--
 
 SecMovement:NewSlider("Walkspeed", "Modifies Player Speed - Set the value to minimum for disabled Modified Speed", 500, 16, function(s)
