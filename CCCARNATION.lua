@@ -860,11 +860,6 @@ SecScripts:NewButton("TurtleSpy", "Loads TurtleSpy", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/main/Turtle%20Spy.lua"))()
 end)
 
---// TurtleSpy
-SecScripts:NewButton("TurtleSpy", "Loads TurtleSpy", function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/main/Turtle%20Spy.lua"))()
-end)
-
 --// SimpleSpy
 SecScripts:NewButton("RemoteSpy", "Loads RemoteSpy", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"))()
