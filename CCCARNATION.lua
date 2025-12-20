@@ -15,7 +15,7 @@ local colors = {
 }
 
 --// CCC HeaderName
-local window = Library.CreateLib("CC Carnation Alpha v0.4", colors)
+local window = Library.CreateLib("CC Carnation Alpha v0.5", colors)
 
 --====== (([[{{ TABS }}]])) ======--
 
@@ -1093,4 +1093,4 @@ refreshNPCList()
 refreshAreaList()
 refreshLivingNPCList()
 refreshPlayerList()
-print("CC Carnation Alpha v0.4 loaded successfully.✨")
+print("CC Carnation Alpha v0.5 loaded successfully.✨")
