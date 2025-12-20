@@ -37,7 +37,7 @@ local SecMovement = TabLocal:NewSection("Movement")
 local TabMisc = window:NewTab("Extras")
 local SecESP = TabMisc:NewSection("ESP")
 local SecScripts = TabMisc:NewSection("External Scripts")
-local SecLighiting = TabMisc:NewSection("Lighting")
+local SecLighting = TabMisc:NewSection("Lighting")
 
 
 --====== (([[{{ TABS }}]])) ======--
@@ -443,7 +443,7 @@ SecAutoFarm:NewToggle("AutoKill Entities", "Kill entities around you", function(
     if state then autokill() end
 end)
 
--- [[ AUTO HIT ]] --
+-- [[{{ AUTO HIT }}]] --
 SecLivingTP:NewToggle("Auto Click", "Clicks if NOT hovering a GUI", function(toggleState)
     autoClickActive = toggleState
     if autoClickActive and not autoClickThread then
@@ -528,6 +528,7 @@ end)
 
 --====== (([[{{ TELEPORTS }}]])) ======--
 
+-- [[{{ NPCS TP }}]] --
 local selectedNPC = nil
 
 SecTeleportNPC:NewButton("Teleport To NPC", "Teleport to selected NPC", function()
@@ -557,6 +558,7 @@ SecTeleportNPC:NewButton("Refresh NPC List", "Reload all NPCs from workspace", f
     refreshNPCList()
 end)
 
+-- [[{{ AREA TP }}]] --
 local selectedArea = nil
 
 SecTeleportArea:NewButton("Teleport To Area", "Teleport to selected area", function()
@@ -589,6 +591,7 @@ end)
 
 --====== (([[{{ AUTO }}]])) ======--
 
+-- [[{{ REMOTE }}]] --
 local upgRemote = ReplicatedStorage:WaitForChild("GlobalUsedRemotes"):WaitForChild("UpgradeMas")
 local brkRemote = ReplicatedStorage:WaitForChild("GlobalUsedRemotes"):WaitForChild("Breakthrough")
 
@@ -617,7 +620,7 @@ end)
 
 --====== (([[{{ EXTRAS }}]])) ======--
 
---ESP  
+-- [[{{ ESP }}]] --
 SecESP:NewToggle("Box", "Highlight NPC", function(state)
     ESP_BOX = state
 end)
@@ -638,6 +641,7 @@ SecESP:NewColorPicker("ESP Color", "Color Info", espColor, function(color)
     espColor = color
 end)
 
+-- [[{{ SCRIPTS EXTRAS }}]] --
 SecScripts:NewButton("Nameless Admin", "Load Admin", function()
     loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-nameless-admin-15646"))()
 end)
@@ -650,8 +654,8 @@ SecScripts:NewButton("DEX REVAMPED", "Loads Better DEX", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/refs/heads/main/DexPlusBackup.luau"))()
 end)
 
-
-local techDropdown = SecLighiting:NewDropdown("Lighting Technology", "Choose a lighting mode", technologyList, function(selected)
+-- [[{{ LIGHTING }}]] --
+local techDropdown = SecLighting:NewDropdown("Lighting Technology", "Choose a lighting mode", technologyList, function(selected)
 
     local lighting = game:GetService("Lighting")
     if not lighting then return end
@@ -663,18 +667,20 @@ local techDropdown = SecLighiting:NewDropdown("Lighting Technology", "Choose a l
 end)
 
 SecLighting:NewButton("Remover Blur", "Remove todos os efeitos de Blur do jogo", function()
-    local blur = game:GetService("Lighting") -- Variável alterada de lighting para blur
+    local blur = game:GetService("Lighting")
+    local count = 0
     
-        for _, v in ipairs(blur:GetDescendants()) do
-            -- Verificamos se o objeto existe e se o nome contém "blur"
-            if v and v.Name and string.find(string.lower(v.Name), "blur") then
-                -- O pcall evita que o script pare caso o Roblox impeça de deletar algo
-                pcall(function()
-                    v:Destroy()
-                end)
-            end
+    -- Usamos GetDescendants para garantir que pegue blurs dentro de pastas também
+    for _, v in ipairs(blur:GetDescendants()) do
+        -- Verifica se o nome contém "blur" OU se o objeto é da classe BlurEffect
+        if string.find(string.lower(v.Name), "blur") or v:IsA("BlurEffect") then
+            v:Destroy()
+            count = count + 1
         end
-    end)
+    end
+    
+    print("Sucesso: " .. count .. " itens de Blur foram deletados.")
+end)
 
 --====== (([[{{ LOCAL PLAYER }}]])) ======--
 
