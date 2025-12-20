@@ -85,6 +85,7 @@ local autoClickActive = false
 local fireMEnabled = false
 local fireBreakthroughEnabled = false
 local LivingTeleportActive = false
+local antiAFKConnection
 
 -- [[ TELEPORTS ]] --
 
@@ -947,10 +948,14 @@ end)
 
 --// Anti-AFK
 SecMovement:NewButton("Anti-AFK", "Prevents disconnection", function()
-    LP.Idled:Connect(function()
-        game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    if antiAFKConnection then return end
+
+    local VirtualUser = game:GetService("VirtualUser")
+
+    antiAFKConnection = LP.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
         task.wait(1)
-        game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     end)
 end)
 
