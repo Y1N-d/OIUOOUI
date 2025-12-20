@@ -663,11 +663,10 @@ local techDropdown = SecLighiting:NewDropdown("Lighting Technology", "Choose a l
 end)
 
 SecLighting:NewButton("Remover Blur", "Remove todos os efeitos de Blur do jogo", function()
-    local lighting = game:GetService("Lighting")
+    local blur = game:GetService("Lighting")
     local count = 0
     
-    -- Usamos GetDescendants para garantir que pegue blurs dentro de pastas também
-    for _, v in ipairs(lighting:GetDescendants()) do
+    for _, v in ipairs(blur:GetDescendants()) do
         if string.find(string.lower(v.Name), "blur") then
             v:Destroy()
             count = count + 1
