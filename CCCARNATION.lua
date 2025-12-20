@@ -25,7 +25,6 @@ local SecAutoFarm = TabMain:NewSection("Auto Farm")
 local SecLivingTP = TabMain:NewSection("Living TP / Hit")
 local SecGUIOPENER = TabMain:NewSection("Gui Opener")
 
-
 --// Event
 local TabEvent = window:NewTab("Halloween Event")
 local SecEvent = TabEvent:NewSection("Bloodstone")
@@ -86,6 +85,14 @@ local fireMEnabled = false
 local fireBreakthroughEnabled = false
 local LivingTeleportActive = false
 local antiAFKConnection
+local PlayerTeleportActive = false
+local PlayerLoopActive = false
+local selectedPlayerLoop = nil
+local selectedPlayerLoopModel = nil
+local teleportConnection = nil
+
+--// Position
+local playerLoopPosition = "Back"
 
 -- [[ TELEPORTS ]] --
 
@@ -121,6 +128,12 @@ local technologyList = {
     "ShadowMap",
     "Unified",
     "Voxel"
+
+}
+
+    local LoopPositions = {
+        "Back",
+        "Down"
 }
 
 -- [[ THREADS ]] --
@@ -128,6 +141,8 @@ local technologyList = {
 --// Main
 local autoClickThread = nil
 local teleportThread = nil
+local playerTeleportThread = nil
+local playerLoopThread = nil
 
 -- [[ ESP ]] --
 
@@ -501,12 +516,17 @@ local function refreshPlayerList()
     local playerNames = {}
 
     local livingFolder = workspace:FindFirstChild("Living")
-    local playersFolder = livingFolder and livingFolder:FindFirstChild("Players")
 
-    if playersFolder then
-        for _, p in ipairs(playersFolder:GetChildren()) do
-            if p:FindFirstChild("HumanoidRootPart") then
-                table.insert(playerNames, p.Name)
+    if livingFolder then
+        for _, obj in ipairs(livingFolder:GetChildren()) do
+            if obj:IsA("Model") then
+                local humanoidRoot = obj:FindFirstChild("HumanoidRootPart")
+                if humanoidRoot then
+                    local plr = game.Players:GetPlayerFromCharacter(obj)
+                    if plr then
+                        table.insert(playerNames, obj.Name)
+                    end
+                end
             end
         end
     end
@@ -515,6 +535,8 @@ local function refreshPlayerList()
         return a:lower() < b:lower()
     end)
 
+    selectedPlayerLoop = nil
+    selectedPlayerLoopModel = nil
     if playerDropdown then
         playerDropdown:Refresh(playerNames)
     end
@@ -548,69 +570,68 @@ SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
     local player = game.Players.LocalPlayer
     local storedCollisionState = {}
 
-    if state and not teleportThread then
+    if state then
+        if teleportConnection then teleportConnection:Disconnect() end
         
-        teleportThread = task.spawn(function()
-            while LivingTeleportActive do
-                local char = player.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                local humanoid = char and char:FindFirstChild("Humanoid")
-
-                if hrp and humanoid and selectedLivingNPC then
-
-                    hrp.AssemblyLinearVelocity = Vector3.zero
-
-                    for _, part in ipairs(char:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            if storedCollisionState[part] == nil then
-                                storedCollisionState[part] = part.CanCollide
-                            end
-                            part.CanCollide = false
-                        end
-                    end
-
-                    local LivingFolder = workspace:FindFirstChild("Living")
-                    local target = selectedLivingNPCModel
-                    local targetHRP = target and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart"))
-
-                    if targetHRP then
-                        local offset = Vector3.new()
-                        if teleportPosition == "Back" then 
-                            offset = -targetHRP.CFrame.LookVector * 7.5
-                        elseif teleportPosition == "Front" then 
-                            offset = targetHRP.CFrame.LookVector * 3
-                        elseif teleportPosition == "Up" then 
-                            offset = Vector3.new(0, 6.9, 0)
-                        elseif teleportPosition == "Down" then 
-                            offset = Vector3.new(0, -6.7, 0)
-                        end
-
-                        hrp.CFrame = targetHRP.CFrame + offset
-                    end
-                end
-
-                task.wait()
-            end
+        teleportConnection = RunService.Heartbeat:Connect(function()
+            if not LivingTeleportActive then return end
 
             local char = player.Character
-            if char then
-                local hrp = char:FindFirstChild("HumanoidRootPart")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-                for part, oldState in pairs(storedCollisionState) do
-                    if part and part:IsDescendantOf(char) then
-                        part.CanCollide = oldState
+            if not (hrp and selectedLivingNPCModel) then return end
+            
+            hrp.AssemblyLinearVelocity = Vector3.zero
+
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    if storedCollisionState[part] == nil then
+                        storedCollisionState[part] = part.CanCollide
                     end
-                end
-
-                storedCollisionState = {}
-
-                if hrp then
-                    hrp.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
+                    part.CanCollide = false
                 end
             end
 
-            teleportThread = nil
+            local target = selectedLivingNPCModel
+            local targetHRP = target and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart"))
+            if not targetHRP then return end
+
+            local offset = Vector3.new()
+            if teleportPosition == "Back" then 
+                offset = -targetHRP.CFrame.LookVector * 7.5
+            elseif teleportPosition == "Front" then 
+                offset = targetHRP.CFrame.LookVector * 3
+            elseif teleportPosition == "Up" then 
+                offset = Vector3.new(0, 6.9, 0)
+            elseif teleportPosition == "Down" then 
+                offset = Vector3.new(0, -6.7, 0)
+            end
+
+            hrp.CFrame = targetHRP.CFrame + offset
         end)
+
+    else
+        if teleportConnection then
+            teleportConnection:Disconnect()
+            teleportConnection = nil
+        end
+
+        local char = player.Character
+        if char then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+
+            for part, oldState in pairs(storedCollisionState) do
+                if part and part:IsDescendantOf(char) then
+                    part.CanCollide = oldState
+                end
+            end
+
+            storedCollisionState = {}
+
+            if hrp then
+                hrp.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
+            end
+        end
     end
 end)
 
@@ -752,22 +773,75 @@ end)
 
 -- [[{{ PLAYER TP }}]] --
 
+--// Player  LoopTP
+SecTeleportPLAYER:NewToggle("PlayerLoop TP", "Teleport loop to selected player", function(state)
+    PlayerLoopActive = state
+    local player = game.Players.LocalPlayer
+    local storedCollisionState = {}
+
+    if state and not playerLoopThread then
+playerLoopThread = task.spawn(function()
+    local RunService = game:GetService("RunService")
+
+    RunService.Heartbeat:Connect(function()
+        if not PlayerLoopActive then return end
+        
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+        if not hrp then
+            return
+        end
+        
+        if not selectedPlayerLoopModel then
+            return
+        end
+        
+        local targetHum = selectedPlayerLoopModel:FindFirstChild("Humanoid")
+        if not targetHum or targetHum.Health <= 0 then
+            return
+        end
+        
+        local targetHRP = selectedPlayerLoopModel:FindFirstChild("HumanoidRootPart")
+        if not targetHRP then
+            return
+        end
+
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        
+        local offset = Vector3.new()
+
+        if playerLoopPosition == "Back" then
+            offset = -targetHRP.CFrame.LookVector * 6
+        elseif playerLoopPosition == "Down" then
+            offset = Vector3.new(0, -6, 0)
+        end
+
+        hrp.CFrame = CFrame.new(
+            targetHRP.Position + offset,
+            targetHRP.Position
+        )
+    end)
+end)
+
 --// Teleport to Player
-local selectedPLAYER = nil
-
 SecTeleportPLAYER:NewButton("Teleport To Player", "Teleport to selected Player", function()
-    if not selectedPLAYER then return end
-    
+    if not selectedPlayerLoop then return end
+
     local livingFolder = workspace:FindFirstChild("Living")
-    local playersFolder = livingFolder and livingFolder:FindFirstChild("Players")
+    if not livingFolder then return end
 
-    if not playersFolder then return end
+    local targetChar
+    for _, obj in ipairs(livingFolder:GetChildren()) do
+        if obj.Name == selectedPlayerLoop then
+            targetChar = obj
+            break
+        end
+    end
 
-    local targetChar = playersFolder:FindFirstChild(selectedPLAYER)
     if not targetChar or not targetChar:FindFirstChild("HumanoidRootPart") then return end
 
-    local localPlayer = game.Players.LocalPlayer
-    local char = localPlayer.Character
+    local char = LP.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
     if hrp then
@@ -775,11 +849,24 @@ SecTeleportPLAYER:NewButton("Teleport To Player", "Teleport to selected Player",
     end
 end)
 
---// Player List
-playerDropdown = SecTeleportPLAYER:NewDropdown("Player List", "Choose a player to teleport", playerNames, function(selected)
-    selectedPLAYER = selected
+local PlayerLoopPosDropdown = SecTeleportPLAYER:NewDropdown("PlayerLoop Position", "Teleport position", LoopPositions, function(pos)
+    playerLoopPosition = pos
 end)
 
+--// Player List
+playerDropdown = SecTeleportPLAYER:NewDropdown("Player List", "Choose a player to teleport", playerNames, function(selected)
+    selectedPlayerLoop = selected
+
+    local livingFolder = workspace:FindFirstChild("Living")
+    if livingFolder then
+        for _, obj in ipairs(livingFolder:GetChildren()) do
+            if obj.Name == selectedPlayerLoop then
+                selectedPlayerLoopModel = obj
+                break
+            end
+        end
+    end
+end)
 --// Refresh Player List
 SecTeleportPLAYER:NewButton("Refresh Player List", "Reload all players from workspace", function()
     refreshPlayerList()
@@ -802,7 +889,7 @@ SecMastery:NewToggle("Auto Breakthrough (Mastery 15)", "Auto fire breakthrough",
     fireBreakthroughEnabled = state
 end)
 
--- DATA
+--DATA
 task.spawn(function()
     local data = LP:WaitForChild("Data")
     local exp = data:WaitForChild("Exp")
@@ -1005,3 +1092,5 @@ runItemFarm()
 refreshNPCList()
 refreshAreaList()
 refreshLivingNPCList()
+refreshPlayerList()
+print("CC Carnation Alpha v0.4 loaded successfully.✨")
