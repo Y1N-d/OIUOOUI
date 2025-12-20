@@ -27,6 +27,7 @@ local SecEvent = TabEvent:NewSection("Bloodstone")
 local TabTeleport = window:NewTab("Teleports")
 local SecTeleportNPC = TabTeleport:NewSection("NPCs")
 local SecTeleportArea = TabTeleport:NewSection("Areas")
+local SecTeleportPLAYER = TabTeleport:NewSection("Players")
 
 local TabAutos = window:NewTab("Autos")
 local SecMastery = TabAutos:NewSection("Progression")
@@ -73,12 +74,19 @@ local teleportDelay = 0.15
 local promptDelay = 0.1
 local teleportPosition = "Front"
 local selectedLivingNPC = nil
-local positionOptions = {"Front", "Back", "Up", "Down"}
 
 -- [[ DROPDOWNS ]] --
 local npcNames = {}
 local areaNames = {}
 local livingNPCNames = {}
+local playerNames = {}
+
+local positionOptions = {
+    "Down",
+    "Up",
+    "Back",
+    "Front"
+}
 
 local technologyList = {
     "Compatibility",
@@ -366,12 +374,12 @@ local function refreshNPCList()
 
     if npcFolder then
         for _, npc in ipairs(npcFolder:GetChildren()) do
-            if npc:FindFirstChild("HumanoidRootPart") then
+            if npc:IsA("Model") then
                 table.insert(npcNames, npc.Name)
             end
         end
     end
-   
+
     table.sort(npcNames, function(a, b)
         return a:lower() < b:lower()
     end)
@@ -380,7 +388,6 @@ local function refreshNPCList()
         npcDropdown:Refresh(npcNames)
     end
 end
-
 
 local function refreshAreaList()
 
@@ -406,15 +413,36 @@ local function refreshAreaList()
 end
 
 local function refreshLivingNPCList()
-
     livingNPCNames = {}
+    livingNPCObjects = {}
+
+    local tempList = {}
 
     local livingFolder = workspace:FindFirstChild("Living")
     if livingFolder then
-        for _, npc in ipairs(livingFolder:GetChildren()) do
-            if npc:IsA("Model") then
-                table.insert(livingNPCNames, npc.Name)
+        for _, obj in ipairs(livingFolder:GetChildren()) do
+            if obj:IsA("Model") and not Players:GetPlayerFromCharacter(obj) then
+                local baseName = obj.Name
+
+                if not tempList[baseName] then
+                    tempList[baseName] = {}
+                end
+
+                table.insert(tempList[baseName], obj)
             end
+        end
+    end
+
+    for baseName, objectList in pairs(tempList) do
+        for i, obj in ipairs(objectList) do
+            local displayName = baseName
+
+            if #objectList > 1 and i > 1 then
+                displayName = baseName .. " " .. i
+            end
+
+            table.insert(livingNPCNames, displayName)
+            livingNPCObjects[displayName] = obj
         end
     end
 
@@ -424,6 +452,30 @@ local function refreshLivingNPCList()
 
     if livingNPCDropdown then
         livingNPCDropdown:Refresh(livingNPCNames)
+    end
+end
+
+
+local function refreshPlayerList()
+    local playerNames = {}
+
+    local livingFolder = workspace:FindFirstChild("Living")
+    local playersFolder = livingFolder and livingFolder:FindFirstChild("Players")
+
+    if playersFolder then
+        for _, p in ipairs(playersFolder:GetChildren()) do
+            if p:FindFirstChild("HumanoidRootPart") then
+                table.insert(playerNames, p.Name)
+            end
+        end
+    end
+    
+    table.sort(playerNames, function(a, b)
+        return a:lower() < b:lower()
+    end)
+
+    if playerDropdown then
+        playerDropdown:Refresh(playerNames)
     end
 end
 
@@ -443,8 +495,96 @@ SecAutoFarm:NewToggle("AutoKill Entities", "Kill entities around you", function(
     if state then autokill() end
 end)
 
+-- [[{{ LIVING TELEPORT }}]] --
+SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
+    LivingTeleportActive = state
+    local player = game.Players.LocalPlayer
+    local storedCollisionState = {}
+
+    if state and not teleportThread then
+        
+        teleportThread = task.spawn(function()
+            while LivingTeleportActive do
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local humanoid = char and char:FindFirstChild("Humanoid")
+
+                if hrp and humanoid and selectedLivingNPC then
+                    -- segura no ar sem anchored
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+
+                    -- remove colisão
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            if storedCollisionState[part] == nil then
+                                storedCollisionState[part] = part.CanCollide
+                            end
+                            part.CanCollide = false
+                        end
+                    end
+
+                    -- NPC
+                    local LivingFolder = workspace:FindFirstChild("Living")
+                    local target = selectedLivingNPCModel
+                    local targetHRP = target and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart"))
+
+                    if targetHRP then
+                        local offset = Vector3.new()
+                        if teleportPosition == "Back" then 
+                            offset = -targetHRP.CFrame.LookVector * 7.5
+                        elseif teleportPosition == "Front" then 
+                            offset = targetHRP.CFrame.LookVector * 3
+                        elseif teleportPosition == "Up" then 
+                            offset = Vector3.new(0, 6.9, 0)
+                        elseif teleportPosition == "Down" then 
+                            offset = Vector3.new(0, -6.7, 0)
+                        end
+
+                        hrp.CFrame = targetHRP.CFrame + offset
+                    end
+                end
+
+                task.wait()
+            end
+
+            -- restaurar
+            local char = player.Character
+            if char then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+
+                for part, oldState in pairs(storedCollisionState) do
+                    if part and part:IsDescendantOf(char) then
+                        part.CanCollide = oldState
+                    end
+                end
+
+                storedCollisionState = {}
+
+                if hrp then
+                    hrp.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
+                end
+            end
+
+            teleportThread = nil
+        end)
+    end
+end)
+
+SecLivingTP:NewDropdown("TP Position", "Where to stay relative to NPC", positionOptions, function(selected)
+    teleportPosition = selected
+end)
+
+livingNPCDropdown = SecLivingTP:NewDropdown("Living List", "Choose an NPC", livingNPCNames, function(selected)
+    selectedLivingNPC = selected
+    selectedLivingNPCModel = livingNPCObjects[selected]
+end)
+
+SecLivingTP:NewButton("Refresh Living List", "Update NPCs", function()
+    refreshLivingNPCList()
+end)
+
 -- [[{{ AUTO HIT }}]] --
-SecLivingTP:NewToggle("Auto Click", "Clicks if NOT hovering a GUI", function(toggleState)
+SecLivingTP:NewToggle("Auto Hit", "Clicks if NOT hovering a GUI", function(toggleState)
     autoClickActive = toggleState
     if autoClickActive and not autoClickThread then
         autoClickThread = task.spawn(function()
@@ -459,47 +599,6 @@ SecLivingTP:NewToggle("Auto Click", "Clicks if NOT hovering a GUI", function(tog
                 task.wait(0.05)
             end
             autoClickThread = nil
-        end)
-    end
-end)
-
--- [[{{ LIVING TELEPORT }}]] --
-livingNPCDropdown = SecLivingTP:NewDropdown("Living List", "Choose an NPC", livingNPCNames, function(selected)
-    selectedLivingNPC = selected
-end)
-
-SecLivingTP:NewButton("Refresh Living List", "Update NPCs", function()
-    refreshLivingNPCList()
-end)
-
-SecLivingTP:NewDropdown("TP Position", "Where to stay relative to NPC", positionOptions, function(selected)
-    teleportPosition = selected
-end)
-
-SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
-    LivingTeleportActive = state
-    if state and not teleportThread then
-        teleportThread = task.spawn(function()
-            while LivingTeleportActive do
-                if HRP and selectedLivingNPC then
-                    local npcFolder = workspace:FindFirstChild("Living")
-                    local target = npcFolder and npcFolder:FindFirstChild(selectedLivingNPC)
-                    local targetHRP = target and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart"))
-                    
-                    if targetHRP then
-                        local offset = Vector3.new(0,0,0)
-                        if teleportPosition == "Back" then offset = -targetHRP.CFrame.LookVector * 3
-                        elseif teleportPosition == "Front" then offset = targetHRP.CFrame.LookVector * 3
-                        elseif teleportPosition == "Up" then offset = Vector3.new(0, 5, 0)
-                        elseif teleportPosition == "Down" then offset = Vector3.new(0, -5, 0) HRP.CanCollide = false
-                        end
-                        HRP.CFrame = targetHRP.CFrame + offset
-                    end
-                end
-                task.wait(0.02)
-            end
-            if HRP then HRP.CanCollide = true end
-            teleportThread = nil
         end)
     end
 end)
@@ -587,6 +686,42 @@ end)
 
 SecTeleportArea:NewButton("Refresh Area List", "Reload all areas from workspace", function()
     refreshAreaList()
+end)
+
+
+-- [[{{ PLAYER TP }}]] --
+local selectedPLAYER = nil
+
+SecTeleportPLAYER:NewButton("Teleport To Player", "Teleport to selected Player", function()
+    if not selectedPLAYER then return end
+    
+    -- Define o caminho para a pasta Living.Players
+    local livingFolder = workspace:FindFirstChild("Living")
+    local playersFolder = livingFolder and livingFolder:FindFirstChild("Players")
+
+    if not playersFolder then return end
+
+    -- Localiza o alvo dentro da pasta específica
+    local targetChar = playersFolder:FindFirstChild(selectedPLAYER)
+    if not targetChar or not targetChar:FindFirstChild("HumanoidRootPart") then return end
+
+    -- Referência ao seu personagem
+    local localPlayer = game.Players.LocalPlayer
+    local char = localPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if hrp then
+        -- Teleporta para o CFrame do alvo com um pequeno ajuste de altura (3 studs)
+        hrp.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+    end
+end)
+
+playerDropdown = SecTeleportPLAYER:NewDropdown("Player List", "Choose a player to teleport", playerNames, function(selected)
+    selectedPLAYER = selected
+end)
+
+SecTeleportPLAYER:NewButton("Refresh Player List", "Reload all players from workspace", function()
+    refreshPlayerList()
 end)
 
 --====== (([[{{ AUTO }}]])) ======--
