@@ -13,7 +13,7 @@ local colors = {
     ElementColor = Color3.fromRGB(50, 50, 50) 
 }
 
-local window = Library.CreateLib("CC Carnation Alpha v0.3", colors)
+local window = Library.CreateLib("CC Carnation Alpha v0.4", colors)
 
 --====== (([[{{ TABS }}]])) ======--
 local TabMain = window:NewTab("Main")
@@ -660,6 +660,21 @@ local techDropdown = SecLighiting:NewDropdown("Lighting Technology", "Choose a l
         lighting.Technology = Enum.Technology[selected]
     end)
 
+end)
+
+SecLighting:NewButton("Remover Blur", "Remove todos os efeitos de Blur do jogo", function()
+    local lighting = game:GetService("Lighting")
+    local count = 0
+    
+    -- Usamos GetDescendants para garantir que pegue blurs dentro de pastas também
+    for _, v in ipairs(lighting:GetDescendants()) do
+        if string.find(string.lower(v.Name), "blur") then
+            v:Destroy()
+            count = count + 1
+        end
+    end
+    
+    print("" .. count .. " effects were destroyed")
 end)
 
 
