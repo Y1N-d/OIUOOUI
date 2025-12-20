@@ -5,6 +5,7 @@ local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Y1N-d
 
 --====== (([[{{ KAVOUI APPEARENCE }}]])) ======--
 
+--// CCC UI Color
 local colors = {
     SchemeColor = Color3.fromRGB(255, 102, 0),
     Background = Color3.fromRGB(15, 15, 15),
@@ -13,28 +14,37 @@ local colors = {
     ElementColor = Color3.fromRGB(50, 50, 50) 
 }
 
+--// CCC HeaderName
 local window = Library.CreateLib("CC Carnation Alpha v0.4", colors)
 
 --====== (([[{{ TABS }}]])) ======--
+
+--// Main
 local TabMain = window:NewTab("Main")
 local SecAutoFarm = TabMain:NewSection("Auto Farm")
 local SecLivingTP = TabMain:NewSection("Living TP / Hit")
 local SecGUIOPENER = TabMain:NewSection("Gui Opener")
 
+
+--// Event
 local TabEvent = window:NewTab("Halloween Event")
 local SecEvent = TabEvent:NewSection("Bloodstone")
 
+--// Teleports
 local TabTeleport = window:NewTab("Teleports")
 local SecTeleportNPC = TabTeleport:NewSection("NPCs")
 local SecTeleportArea = TabTeleport:NewSection("Areas")
 local SecTeleportPLAYER = TabTeleport:NewSection("Players")
 
+--// Auto
 local TabAutos = window:NewTab("Autos")
 local SecMastery = TabAutos:NewSection("Progression")
 
+--// Local Player
 local TabLocal = window:NewTab("LocalPlayer")
 local SecMovement = TabLocal:NewSection("Movement")
 
+--// EXTRA
 local TabMisc = window:NewTab("Extras")
 local SecESP = TabMisc:NewSection("ESP")
 local SecScripts = TabMisc:NewSection("External Scripts")
@@ -42,6 +52,8 @@ local SecLighting = TabMisc:NewSection("Lighting")
 
 
 --====== (([[{{ TABS }}]])) ======--
+
+--// Essentials
 local UIS = game:GetService("UserInputService")
 local VIM = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
@@ -52,15 +64,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Camera = workspace.CurrentCamera
 
 --====== (([[{{ LOCAL }}]])) ======--
+
+--// Others
 local LP = Players.LocalPlayer
 local PlayerGui = LP:WaitForChild("PlayerGui")
 local HRP = nil
 local CoreGui = game:GetService("CoreGui")
 
+--// Slider
 local defaultWalkSpeed = LP.Character.Humanoid.WalkSpeed
 local defaultJumpPower = LP.Character.Humanoid.JumpPower
 
 -- [[ TOGGLES ]] --
+
+--// Main
 local autofarmEnabled = false
 local autokillEnabled = false
 local ignoreChest = false
@@ -70,17 +87,25 @@ local fireBreakthroughEnabled = false
 local LivingTeleportActive = false
 
 -- [[ TELEPORTS ]] --
+
+--// TP Delay
 local teleportDelay = 0.15
 local promptDelay = 0.1
+
+--// Living TP
 local teleportPosition = "Front"
 local selectedLivingNPC = nil
 
 -- [[ DROPDOWNS ]] --
+
+--// Auto List
 local npcNames = {}
 local areaNames = {}
 local livingNPCNames = {}
 local playerNames = {}
 
+
+--// Manual List
 local positionOptions = {
     "Down",
     "Up",
@@ -98,24 +123,31 @@ local technologyList = {
 }
 
 -- [[ THREADS ]] --
+
+--// Main
 local autoClickThread = nil
 local teleportThread = nil
 
 -- [[ ESP ]] --
+
+--// Local
 local espColor = Color3.fromRGB(255, 0, 0)
 local espFolder = Instance.new("Folder")
 espFolder.Name = "ESPFolder"
 espFolder.Parent = game.CoreGui
 local NPC_FOLDER = workspace.Living
 
+--// Trigger
 local ESP_ENABLED = true
 local ESP_BOX = false
 local ESP_TRACER = false
 local ESP_NAME = false
 local ESP_DISTANCE = false
 
+--// ESP Color Main
 local espColor = Color3.fromRGB(255,0,0)
 
+--// ESP List
 local Tracers = {}
 local Names = {}
 local Boxes = {}
@@ -246,7 +278,6 @@ function updateESP()
         return
     end
 
-    -- UPDATE NPC LIST
     for _, npc in ipairs(NPC_FOLDER:GetChildren()) do
         if npc:FindFirstChild("Humanoid") 
         and npc:FindFirstChild("HumanoidRootPart") 
@@ -288,6 +319,7 @@ end)
 
 --====== (([[{{ FUNCTIONS }}]])) ======--
 
+--// Main
 local function updateHRP()
     if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         HRP = LP.Character.HumanoidRootPart
@@ -313,6 +345,8 @@ local function activatePrompt(prompt)
 end
 
 -- [[{{ ITEM FARM }}]] --
+
+--// Trigger ItemFarm
 local function runItemFarm()
     task.spawn(function()
         while true do
@@ -348,6 +382,8 @@ local function runItemFarm()
 end
 
 -- [[{{ AUTOKILL }}]] --
+
+--// Trigger AutoKill
 local function autokill()
     task.spawn(function()
         while autokillEnabled do
@@ -365,6 +401,8 @@ local function autokill()
 end
 
 -- [[{{ REFRESH }}]] --
+
+--// NPC List
 local function refreshNPCList()
 
     npcNames = {}
@@ -389,6 +427,7 @@ local function refreshNPCList()
     end
 end
 
+--// Area List
 local function refreshAreaList()
 
     areaNames = {}
@@ -412,6 +451,7 @@ local function refreshAreaList()
     end
 end
 
+--// LivingNPC List
 local function refreshLivingNPCList()
     livingNPCNames = {}
     livingNPCObjects = {}
@@ -455,7 +495,7 @@ local function refreshLivingNPCList()
     end
 end
 
-
+--// Player List
 local function refreshPlayerList()
     local playerNames = {}
 
@@ -482,20 +522,26 @@ end
 --====== (([[{{ MAIN }}]])) ======--
 
 -- [[{{ AUTO FARM }}]] --
+
+--// Everything Autofarm
 SecAutoFarm:NewToggle("Everything Autofarm", "Farms Chest/Box/Ores/Barrel", function(state)
     autofarmEnabled = state
 end)
 
+--// Ignore Chest
 SecAutoFarm:NewToggle("Ignore Chest", "Farms Box/Ores/Barrel", function(state)
     ignoreChest = state
 end)
 
+--// Autokill Entities
 SecAutoFarm:NewToggle("AutoKill Entities", "Kill entities around you", function(state)
     autokillEnabled = state
     if state then autokill() end
 end)
 
 -- [[{{ LIVING TELEPORT }}]] --
+
+--// Living Teleport
 SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
     LivingTeleportActive = state
     local player = game.Players.LocalPlayer
@@ -510,10 +556,9 @@ SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
                 local humanoid = char and char:FindFirstChild("Humanoid")
 
                 if hrp and humanoid and selectedLivingNPC then
-                    -- segura no ar sem anchored
+
                     hrp.AssemblyLinearVelocity = Vector3.zero
 
-                    -- remove colisão
                     for _, part in ipairs(char:GetDescendants()) do
                         if part:IsA("BasePart") then
                             if storedCollisionState[part] == nil then
@@ -523,7 +568,6 @@ SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
                         end
                     end
 
-                    -- NPC
                     local LivingFolder = workspace:FindFirstChild("Living")
                     local target = selectedLivingNPCModel
                     local targetHRP = target and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart"))
@@ -547,7 +591,6 @@ SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
                 task.wait()
             end
 
-            -- restaurar
             local char = player.Character
             if char then
                 local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -570,20 +613,25 @@ SecLivingTP:NewToggle("Living TP", "Teleport to selected NPC", function(state)
     end
 end)
 
+--// Teleport Position
 SecLivingTP:NewDropdown("TP Position", "Where to stay relative to NPC", positionOptions, function(selected)
     teleportPosition = selected
 end)
 
+--// Living List
 livingNPCDropdown = SecLivingTP:NewDropdown("Living List", "Choose an NPC", livingNPCNames, function(selected)
     selectedLivingNPC = selected
     selectedLivingNPCModel = livingNPCObjects[selected]
 end)
 
+--// Refresh Living List
 SecLivingTP:NewButton("Refresh Living List", "Update NPCs", function()
     refreshLivingNPCList()
 end)
 
 -- [[{{ AUTO HIT }}]] --
+
+--// Auto Hit
 SecLivingTP:NewToggle("Auto Hit", "Clicks if NOT hovering a GUI", function(toggleState)
     autoClickActive = toggleState
     if autoClickActive and not autoClickThread then
@@ -604,10 +652,13 @@ SecLivingTP:NewToggle("Auto Hit", "Clicks if NOT hovering a GUI", function(toggl
 end)
 
 -- [[{{ GUI OPENER }}]] --
+
+--// Open Stand Storage
 SecGUIOPENER:NewButton("Open Stand Storage", "Toggle UI", function()
     PlayerGui.StandStorage.Enabled = not PlayerGui.StandStorage.Enabled
 end)
 
+--// Open Shop
 SecGUIOPENER:NewButton("Open Shop", "Toggle UI", function()
     local shop = PlayerGui:FindFirstChild("ShopGUI") and PlayerGui.ShopGUI:FindFirstChild("Outer")
     if not shop then return end
@@ -620,6 +671,7 @@ SecGUIOPENER:NewButton("Open Shop", "Toggle UI", function()
     end
 end)
 
+--// Open Seller
 SecGUIOPENER:NewButton("Open Seller", "Toggle UI", function()
     PlayerGui.SellGUI.Enabled = not PlayerGui.SellGUI.Enabled
 end)
@@ -628,6 +680,8 @@ end)
 --====== (([[{{ TELEPORTS }}]])) ======--
 
 -- [[{{ NPCS TP }}]] --
+
+--// Teleport to NPC
 local selectedNPC = nil
 
 SecTeleportNPC:NewButton("Teleport To NPC", "Teleport to selected NPC", function()
@@ -649,15 +703,19 @@ SecTeleportNPC:NewButton("Teleport To NPC", "Teleport to selected NPC", function
     hrp.CFrame = npc.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
 end)
 
+--// NPC List
 npcDropdown = SecTeleportNPC:NewDropdown("NPC List", "Choose an NPC to teleport", npcNames, function(selected)
     selectedNPC = selected
 end)
 
+--// Refresh NPC list
 SecTeleportNPC:NewButton("Refresh NPC List", "Reload all NPCs from workspace", function()
     refreshNPCList()
 end)
 
 -- [[{{ AREA TP }}]] --
+
+--// Teleport to Area
 local selectedArea = nil
 
 SecTeleportArea:NewButton("Teleport To Area", "Teleport to selected area", function()
@@ -680,46 +738,48 @@ SecTeleportArea:NewButton("Teleport To Area", "Teleport to selected area", funct
     hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0)
 end)
 
+--// Area List
 areaDropdown = SecTeleportArea:NewDropdown("Area List", "Choose an area to teleport", areaNames, function(selected)
     selectedArea = selected
 end)
 
+--// Refresh Area List
 SecTeleportArea:NewButton("Refresh Area List", "Reload all areas from workspace", function()
     refreshAreaList()
 end)
 
 
 -- [[{{ PLAYER TP }}]] --
+
+--// Teleport to Player
 local selectedPLAYER = nil
 
 SecTeleportPLAYER:NewButton("Teleport To Player", "Teleport to selected Player", function()
     if not selectedPLAYER then return end
     
-    -- Define o caminho para a pasta Living.Players
     local livingFolder = workspace:FindFirstChild("Living")
     local playersFolder = livingFolder and livingFolder:FindFirstChild("Players")
 
     if not playersFolder then return end
 
-    -- Localiza o alvo dentro da pasta específica
     local targetChar = playersFolder:FindFirstChild(selectedPLAYER)
     if not targetChar or not targetChar:FindFirstChild("HumanoidRootPart") then return end
 
-    -- Referência ao seu personagem
     local localPlayer = game.Players.LocalPlayer
     local char = localPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     
     if hrp then
-        -- Teleporta para o CFrame do alvo com um pequeno ajuste de altura (3 studs)
         hrp.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
     end
 end)
 
+--// Player List
 playerDropdown = SecTeleportPLAYER:NewDropdown("Player List", "Choose a player to teleport", playerNames, function(selected)
     selectedPLAYER = selected
 end)
 
+--// Refresh Player List
 SecTeleportPLAYER:NewButton("Refresh Player List", "Reload all players from workspace", function()
     refreshPlayerList()
 end)
@@ -727,13 +787,16 @@ end)
 --====== (([[{{ AUTO }}]])) ======--
 
 -- [[{{ REMOTE }}]] --
+
 local upgRemote = ReplicatedStorage:WaitForChild("GlobalUsedRemotes"):WaitForChild("UpgradeMas")
 local brkRemote = ReplicatedStorage:WaitForChild("GlobalUsedRemotes"):WaitForChild("Breakthrough")
 
+--// Auto Mastery
 SecMastery:NewToggle("Auto Mastery (Max Level)", "Auto fire mastery upgrade", function(state)
     fireMEnabled = state
 end)
 
+--// Auto Breakthrough
 SecMastery:NewToggle("Auto Breakthrough (Mastery 15)", "Auto fire breakthrough", function(state)
     fireBreakthroughEnabled = state
 end)
@@ -756,40 +819,63 @@ end)
 --====== (([[{{ EXTRAS }}]])) ======--
 
 -- [[{{ ESP }}]] --
+
+--// Box ESP
 SecESP:NewToggle("Box", "Highlight NPC", function(state)
     ESP_BOX = state
 end)
 
+--// Tracer ESP
 SecESP:NewToggle("Tracer", "Line to NPC", function(state)
     ESP_TRACER = state
 end)
 
+
+--// Name ESP
 SecESP:NewToggle("Name", "Show NPC Name", function(state)
     ESP_NAME = state
 end)
 
+--// Distance ESP
 SecESP:NewToggle("Distance", "Show Distance to NPC", function(state)
     ESP_DISTANCE = state
 end)
 
+
+--// ESP Color
 SecESP:NewColorPicker("ESP Color", "Color Info", espColor, function(color)
     espColor = color
 end)
 
 -- [[{{ SCRIPTS EXTRAS }}]] --
+
+--// Nameless Admin
 SecScripts:NewButton("Nameless Admin", "Load Admin", function()
     loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-nameless-admin-15646"))()
 end)
 
+--// TurtleSpy
 SecScripts:NewButton("TurtleSpy", "Loads TurtleSpy", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/main/Turtle%20Spy.lua"))()
 end)
 
-SecScripts:NewButton("DEX REVAMPED", "Loads Better DEX", function()
+--// TurtleSpy
+SecScripts:NewButton("TurtleSpy", "Loads TurtleSpy", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/main/Turtle%20Spy.lua"))()
+end)
+
+--// SimpleSpy
+SecScripts:NewButton("RemoteSpy", "Loads RemoteSpy", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"))()
+end)
+--// Dex Explorer Upgraded
+SecScripts:NewButton("DEX Explorer Upgraded", "Loads Better DEX", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/refs/heads/main/DexPlusBackup.luau"))()
 end)
 
 -- [[{{ LIGHTING }}]] --
+
+--// Lighting Technology
 local techDropdown = SecLighting:NewDropdown("Lighting Technology", "Choose a lighting mode", technologyList, function(selected)
 
     local lighting = game:GetService("Lighting")
@@ -801,13 +887,12 @@ local techDropdown = SecLighting:NewDropdown("Lighting Technology", "Choose a li
 
 end)
 
+--// Remove Blur
 SecLighting:NewButton("Remover Blur", "Remove todos os efeitos de Blur do jogo", function()
     local blur = game:GetService("Lighting")
     local count = 0
     
-    -- Usamos GetDescendants para garantir que pegue blurs dentro de pastas também
     for _, v in ipairs(blur:GetDescendants()) do
-        -- Verifica se o nome contém "blur" OU se o objeto é da classe BlurEffect
         if string.find(string.lower(v.Name), "blur") or v:IsA("BlurEffect") then
             v:Destroy()
             count = count + 1
@@ -817,12 +902,14 @@ SecLighting:NewButton("Remover Blur", "Remove todos os efeitos de Blur do jogo",
     print("Sucesso: " .. count .. " itens de Blur foram deletados.")
 end)
 
+--// Remove Every Effect
 SecLighting:NewButton("Remover Every Effect", "Remove todos os efeitos de Blur do jogo", function()
     game.Lighting:ClearAllChildren()
 end)
 
 --====== (([[{{ LOCAL PLAYER }}]])) ======--
 
+--// Walkspeed Slider
 SecMovement:NewSlider("Walkspeed", "Modifies Player Speed - Set the value to minimum for disabled Modified Speed", 500, 16, function(s)
     defaultWalkSpeed = s 
 end)
@@ -840,6 +927,7 @@ task.spawn(function()
     end
 end)
 
+--// Jumppower Slider
 SecMovement:NewSlider("Jumppower", "Modifies Player Jump - Set the value to minimum for disabled Modified Jump", 500, 50, function(s)
     defaultJumpPower = s 
 end)
@@ -857,6 +945,7 @@ task.spawn(function()
     end
 end)
 
+--// Anti-AFK
 SecMovement:NewButton("Anti-AFK", "Prevents disconnection", function()
     LP.Idled:Connect(function()
         game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
@@ -865,6 +954,7 @@ SecMovement:NewButton("Anti-AFK", "Prevents disconnection", function()
     end)
 end)
 
+--// Server Hop
 SecMovement:NewButton("Server Hop", "Find new server", function()
     local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
     for _, v in ipairs(servers) do
@@ -877,12 +967,14 @@ end)
 
 --====== (([[{{ EVENT }}]])) ======--
 
+--// BloodStone Shop
 SecEvent:NewButton("Open BloodStone Shop", "Toggle UI", function()
     PlayerGui.OrnamentShop.Enabled = not PlayerGui.OrnamentShop.Enabled
 end)
 
 --====== (([[{{ WINDOWS TOGGLE }}]])) ======--
 
+--// UI Toggle
 TabMisc:NewSection("Credits"):NewKeybind("UI Toggle", "RightShift to Hide/Show", Enum.KeyCode.RightShift, function()
     Library:ToggleUI()
 end)
@@ -899,7 +991,7 @@ local CAS = game:GetService("ContextActionService")
     true,
     Enum.KeyCode.RightShift)
 
--- Inicialization
+--====== (([[{{ INICIALIZATION }}]])) ======--
 runItemFarm()
 refreshNPCList()
 refreshAreaList()
