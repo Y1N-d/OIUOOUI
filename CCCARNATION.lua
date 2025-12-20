@@ -663,19 +663,18 @@ local techDropdown = SecLighiting:NewDropdown("Lighting Technology", "Choose a l
 end)
 
 SecLighting:NewButton("Remover Blur", "Remove todos os efeitos de Blur do jogo", function()
-    local blur = game:GetService("Lighting")
-    local count = 0
+    local blur = game:GetService("Lighting") -- Variável alterada de lighting para blur
     
-    for _, v in ipairs(blur:GetDescendants()) do
-        if string.find(string.lower(v.Name), "blur") then
-            v:Destroy()
-            count = count + 1
+        for _, v in ipairs(blur:GetDescendants()) do
+            -- Verificamos se o objeto existe e se o nome contém "blur"
+            if v and v.Name and string.find(string.lower(v.Name), "blur") then
+                -- O pcall evita que o script pare caso o Roblox impeça de deletar algo
+                pcall(function()
+                    v:Destroy()
+                end)
+            end
         end
-    end
-    
-    print("" .. count .. " effects were destroyed")
-end)
-
+    end)
 
 --====== (([[{{ LOCAL PLAYER }}]])) ======--
 
