@@ -972,6 +972,15 @@ SecEvent:NewButton("Open BloodStone Shop", "Toggle UI", function()
     PlayerGui.OrnamentShop.Enabled = not PlayerGui.OrnamentShop.Enabled
 end)
 
+SecEvent:NewButton("Exchange BloodStone", "Exchange Everything", function()
+    local args = {
+    [1] = true
+}
+
+game:GetService("ReplicatedStorage").ABCRemotes.Exchange:FireServer(unpack(args))
+end)
+
+
 --====== (([[{{ WINDOWS TOGGLE }}]])) ======--
 
 --// UI Toggle
