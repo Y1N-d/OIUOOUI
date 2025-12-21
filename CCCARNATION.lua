@@ -80,7 +80,7 @@ local defaultJumpPower = LP.Character.Humanoid.JumpPower
 local autofarmEnabled = false
 local autokillEnabled = false
 local ignoreChest = false
-local autoClickActive = false
+local autoM1Active = false
 local fireMEnabled = false
 local fireBreakthroughEnabled = false
 local LivingTeleportActive = false
@@ -140,7 +140,7 @@ local technologyList = {
 -- [[ THREADS ]] --
 
 --// Main
-local autoClickThread = nil
+local autoM1Thread = nil
 local teleportThread = nil
 local playerTeleportThread = nil
 local playerLoopThread = nil
@@ -652,24 +652,39 @@ SecLivingTP:NewButton("Refresh Living List", "Update NPCs", function()
     refreshLivingNPCList()
 end)
 
--- [[{{ AUTO HIT }}]] --
+-- [[{{ AUTO M1 }}]] --
 
---// Auto Hit
-SecLivingTP:NewToggle("Auto Hit", "Clicks if NOT hovering a GUI", function(toggleState)
-    autoClickActive = toggleState
-    if autoClickActive and not autoClickThread then
-        autoClickThread = task.spawn(function()
-            while autoClickActive do
-                local mouseLocation = UIS:GetMouseLocation()
-                local guisAtPosition = PlayerGui:GetGuiObjectsAtPosition(mouseLocation.X, mouseLocation.Y)
+--// Auto M1
+SecLivingTP:NewToggle("Auto M1", "Keep M1", function(toggleState)
+    AutoM1Active = toggleState
+    if AutoM1Active and not AutoM1Thread then
+        
+        local Event = game:GetService("ReplicatedStorage")["ABC - First Priority"].Utility.Modules.Warp.Index.Event.Reliable
+        
+        AutoM1Thread = task.spawn(function()
+            while AutoM1Active do
                 
-                if #guisAtPosition == 0 then
-                    VIM:SendMouseButtonEvent(mouseLocation.X, mouseLocation.Y, 0, true, game, 0)
-                    VIM:SendMouseButtonEvent(mouseLocation.X, mouseLocation.Y, 0, false, game, 0)
-                end
+                Event:FireServer(
+                    (function(bytes) --[[Type: buffer]]
+                        local b = buffer.create(#bytes)
+                        for i = 1, #bytes do
+                            buffer.writeu8(b, i - 1, bytes[i])
+                        end
+                        return b
+                    end)({ 22 }),
+                    (function(bytes) --[[Type: buffer]]
+                        local b = buffer.create(#bytes)
+                        for i = 1, #bytes do
+                            buffer.writeu8(b, i - 1, bytes[i])
+                        end
+                        return b
+                    end)({ 254, 1, 0, 6, 3, 76, 77, 66 })
+                )
+
                 task.wait(0.05)
             end
-            autoClickThread = nil
+            
+            AutoM1Thread = nil
         end)
     end
 end)
