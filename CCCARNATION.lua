@@ -92,12 +92,12 @@ local selectedPlayerLoopModel = nil
 local teleportConnection = nil
 
 --// Position
-local playerLoopPosition = "Back"
+local playerLoopPosition = "BackCloser"
 
 -- [[ TELEPORTS ]] --
 
 --// TP Delay
-local teleportDelay = 0.15
+local teleportDelay = 0.05
 local promptDelay = 0.1
 
 --// Living TP
@@ -133,6 +133,7 @@ local technologyList = {
 
     local LoopPositions = {
         "Back",
+        "BackCloser",
         "Down"
 }
 
@@ -775,53 +776,96 @@ end)
 
 --// Player  LoopTP
 SecTeleportPLAYER:NewToggle("PlayerLoop TP", "Teleport loop to selected player", function(state)
-    PlayerLoopActive = state
+     PlayerLoopActive = state
     local player = game.Players.LocalPlayer
     local storedCollisionState = {}
 
     if state and not playerLoopThread then
-playerLoopThread = task.spawn(function()
-    local RunService = game:GetService("RunService")
+        playerLoopThread = task.spawn(function()
 
-    RunService.Heartbeat:Connect(function()
-        if not PlayerLoopActive then return end
-        
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            while PlayerLoopActive do
+                task.wait()
 
-        if not hrp then
-            return
-        end
-        
-        if not selectedPlayerLoopModel then
-            return
-        end
-        
-        local targetHum = selectedPlayerLoopModel:FindFirstChild("Humanoid")
-        if not targetHum or targetHum.Health <= 0 then
-            return
-        end
-        
-        local targetHRP = selectedPlayerLoopModel:FindFirstChild("HumanoidRootPart")
-        if not targetHRP then
-            return
-        end
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        
-        local offset = Vector3.new()
+                if not hrp then
+                    continue
+                end
 
-        if playerLoopPosition == "Back" then
-            offset = -targetHRP.CFrame.LookVector * 6
-        elseif playerLoopPosition == "Down" then
-            offset = Vector3.new(0, -6, 0)
-        end
+                if not selectedPlayerLoopModel then
+                    continue
+                end
 
-        hrp.CFrame = CFrame.new(
-            targetHRP.Position + offset,
-            targetHRP.Position
-        )
-    end)
+                local targetHum = selectedPlayerLoopModel:FindFirstChild("Humanoid")
+                if not targetHum or targetHum.Health <= 0 then
+
+                    local foundNew = false
+                    local livingFolder = workspace:FindFirstChild("Living")
+
+                    if livingFolder then
+                        for _, obj in ipairs(livingFolder:GetChildren()) do
+                            if obj.Name == selectedPlayerLoop then
+                                selectedPlayerLoopModel = obj
+                                foundNew = true
+                                break
+                            end
+                        end
+                    end
+
+                    if not foundNew then
+                        task.wait(0.1)
+                        continue
+                    end
+                end
+
+                local targetHRP = selectedPlayerLoopModel:FindFirstChild("HumanoidRootPart")
+                if not targetHRP then 
+                    continue 
+                end
+
+
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        if storedCollisionState[part] == nil then
+                            storedCollisionState[part] = part.CanCollide
+                        end
+                        part.CanCollide = false
+                    end
+                end
+
+                hrp.AssemblyLinearVelocity = Vector3.zero
+
+                local offset = Vector3.new()
+
+                if playerLoopPosition == "Back" then
+                    offset = -targetHRP.CFrame.LookVector * 6
+                elseif playerLoopPosition == "BackCloser" then 
+                    offset = -targetHRP.CFrame.LookVector * 6.6
+                elseif playerLoopPosition == "Down" then
+                    offset = Vector3.new(0, -6, 0)
+                end
+
+                hrp.CFrame = CFrame.new(
+                    targetHRP.Position + offset,
+                    targetHRP.Position
+                )
+            end
+
+            -- restaurar colisão
+            local char = player.Character
+            if char then
+                for part, oldState in pairs(storedCollisionState) do
+                    if part and part:IsDescendantOf(char) then
+                        part.CanCollide = oldState
+                    end
+                end
+            end
+
+            storedCollisionState = {}
+            playerLoopThread = nil
+        end)
+    end
 end)
 
 --// Teleport to Player
