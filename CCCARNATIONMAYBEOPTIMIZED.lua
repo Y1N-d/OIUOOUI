@@ -15,7 +15,7 @@ local colors = {
 }
 
 --// CCC HeaderName
-local window = Library.CreateLib("CC Carnation Alpha v0.7", colors)
+local window = Library.CreateLib("CC Carnation Alpha OP v0.5", colors)
 
 --====== (([[{{ TABS }}]])) ======--
 
@@ -193,6 +193,27 @@ local sellableItems = {
 }
 
 -- [[ THREADS ]] --
+
+--// Otimization
+local Threads = {}
+
+local function startThread(name, func)
+    if Threads[name] then return end
+
+    Threads[name] = true
+    task.spawn(function()
+        func()
+        Threads[name] = nil
+    end)
+end
+
+local function stopThread(name)
+    Threads[name] = nil
+end
+
+local function isThreadRunning(name)
+    return Threads[name] ~= nil
+end
 
 --// Main
 local autoM1Thread = nil
@@ -383,12 +404,33 @@ function updateESP()
 end
 
 --// RENDER LOOP
-RunService.RenderStepped:Connect(function()
-    if LP.Character 
-    and LP.Character:FindFirstChild("HumanoidRootPart") then
+local espConnection
+
+local function isAnyESPEnabled()
+    return ESP_BOX or ESP_TRACER or ESP_NAME or ESP_DISTANCE
+end
+
+local function startESP()
+    if espConnection then return end
+
+    espConnection = RunService.RenderStepped:Connect(function()
+        if not ESP_ENABLED then return end
+        if not isAnyESPEnabled() then return end
+        if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
         updateESP()
+    end)
+end
+
+local function stopESP()
+    if espConnection then
+        espConnection:Disconnect()
+        espConnection = nil
     end
-end)
+
+    for npc,_ in pairs(NPC_LIST) do
+        removeESP(npc)
+    end
+end
 
 --====== (([[{{ FUNCTIONS }}]])) ======--
 
@@ -421,37 +463,37 @@ end
 
 --// Trigger ItemFarm
 local function runItemFarm()
-    task.spawn(function()
-        while true do
-            if autofarmEnabled and HRP then
+    startThread("ItemFarm", function()
+        while autofarmEnabled do
+            if not HRP then
+                task.wait(0.2)
+                continue
+            end
 
-                local folders = {
-                    workspace:FindFirstChild("Item"),
-                    workspace:FindFirstChild("Item2")
-                }
+            local folders = {
+                workspace:FindFirstChild("Item"),
+                workspace:FindFirstChild("Item2")
+            }
 
-                for _, itemFolder in ipairs(folders) do
-                    if not autofarmEnabled or not HRP then break end
-                    if not itemFolder then continue end
+            for _, itemFolder in ipairs(folders) do
+                if not autofarmEnabled then break end
+                if not itemFolder then continue end
 
-                    for _, v in ipairs(itemFolder:GetDescendants()) do
-                        if not autofarmEnabled or not HRP then break end
+                for _, v in ipairs(itemFolder:GetDescendants()) do
+                    if not autofarmEnabled then break end
+                    if not v:IsA("BasePart") then continue end
 
-                        if v:IsA("BasePart") then
+                    local name = v.Name:lower()
+                    local parent = v.Parent and v.Parent.Name:lower() or ""
+                    local isChest = name:find("chest") or parent:find("chest")
 
-                            local partName = v.Name:lower()
-                            local parentName = v.Parent and v.Parent.Name:lower() or ""
-                            local isChest = partName:find("chest") or parentName:find("chest")
+                    if ignoreChest and isChest then continue end
 
-                            if not (ignoreChest and isChest) then
-                                HRP.CFrame = CFrame.new(v.Position + Vector3.new(0, 4, 0)) * HRP.CFrame.Rotation
-                                task.wait(teleportDelay)
+                    HRP.CFrame = CFrame.new(v.Position + Vector3.new(0,4,0))
+                    task.wait(teleportDelay)
 
-                                local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                if prompt then activatePrompt(prompt) end
-                            end
-                        end
-                    end
+                    local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
+                    if prompt then activatePrompt(prompt) end
                 end
             end
 
@@ -693,6 +735,9 @@ end
 --// Everything Autofarm
 SecAutoFarm:NewToggle("Everything Autofarm", "Farms Chest/Box/Ores/Barrel", function(state)
     autofarmEnabled = state
+    if state then
+        runItemFarm()
+    end
 end)
 
 --// Ignore Chest
@@ -1221,26 +1266,44 @@ end)
 -- [[{{ ESP }}]] --
 
 --// Box ESP
-SecESP:NewToggle("Box", "Highlight NPC", function(state)
+SecESP:NewToggle("Box", "NPC Box", function(state)
     ESP_BOX = state
+    if isAnyESPEnabled() then
+        startESP()
+    else
+        stopESP()
+    end
 end)
 
 --// Tracer ESP
-SecESP:NewToggle("Tracer", "Line to NPC", function(state)
+SecESP:NewToggle("Tracer", "NPC Tracer", function(state)
     ESP_TRACER = state
+    if isAnyESPEnabled() then
+        startESP()
+    else
+        stopESP()
+    end
 end)
 
-
 --// Name ESP
-SecESP:NewToggle("Name", "Show NPC Name", function(state)
+SecESP:NewToggle("Name", "NPC Name", function(state)
     ESP_NAME = state
+    if isAnyESPEnabled() then
+        startESP()
+    else
+        stopESP()
+    end
 end)
 
 --// Distance ESP
-SecESP:NewToggle("Distance", "Show Distance to NPC", function(state)
+SecESP:NewToggle("Distance", "NPC Distance", function(state)
     ESP_DISTANCE = state
+    if isAnyESPEnabled() then
+        startESP()
+    else
+        stopESP()
+    end
 end)
-
 
 --// ESP Color
 SecESP:NewColorPicker("ESP Color", "Color Info", espColor, function(color)
@@ -1309,34 +1372,27 @@ SecMovement:NewSlider("Walkspeed", "Modifies Player Speed - Set the value to min
     defaultWalkSpeed = s 
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(0)
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            if defaultWalkSpeed > 16 then
-                if LP.Character.Humanoid.WalkSpeed ~= defaultWalkSpeed then
-                    LP.Character.Humanoid.WalkSpeed = defaultWalkSpeed
-                end
-            end
-        end
+RunService.Heartbeat:Connect(function()
+    local hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
+    if not hum then return end
+
+    if defaultWalkSpeed > 16 then
+        hum.WalkSpeed = defaultWalkSpeed
     end
 end)
+
 
 --// Jumppower Slider
 SecMovement:NewSlider("Jumppower", "Modifies Player Jump - Set the value to minimum for disabled Modified Jump", 500, 50, function(s)
     defaultJumpPower = s 
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(0)
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            if defaultJumpPower > 50 then
-                if LP.Character.Humanoid.JumpPower ~= defaultJumpPower then
-                    LP.Character.Humanoid.JumpPower = defaultJumpPower
-                end
-            end
-        end
+RunService.Heartbeat:Connect(function()
+    local hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
+    if not hum then return end
+
+    if defaultJumpPower > 50 then
+        hum.JumpPower = defaultJumpPower
     end
 end)
 
@@ -1382,21 +1438,14 @@ end)
 SecEvent:NewToggle("Auto Exchange BloodStone", "Automatically exchange BloodStone", function(state)
     autoExchangeEnabled = state
 
-    if state and not autoExchangeThread then
-        autoExchangeThread = task.spawn(function()
+    if state then
+        startThread("AutoExchange", function()
             while autoExchangeEnabled do
-                -- Dispara o remote
-                local success, err = pcall(function()
+                pcall(function()
                     exchangeRemote:FireServer(true)
                 end)
-                if not success then
-                    warn("Erro ao tentar fazer Exchange: ", err)
-                end
-
-                -- Espera um pouco antes da próxima troca
-                task.wait(1) -- você pode ajustar o tempo
+                task.wait(1)
             end
-            autoExchangeThread = nil
         end)
     end
 end)
